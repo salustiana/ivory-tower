@@ -1,0 +1,387 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head>
+<link rel="stylesheet" type="text/css" href="Understanding%20UNIX%20termios%20VMIN%20and%20VTIME_files/unixwiz.css">
+<link rel="shortcut icon" href="http://unixwiz.net/favicon.ico">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="http://unixwiz.net/techtips/techtips.rss">
+<meta name="version" content="$Id: //websites/unixwiz/unixwiz.net/webroot/techtips/termios-vmin-vtime.web#10 $">
+<!-- RSS description = for much higher efficiency than mere one-at-a-time reads. -->
+<!-- RSS pubDate = 2004/05/13 -->
+<!-- Host: amz.unixwiz.net -->
+<title>Understanding UNIX termios VMIN and VTIME</title>
+</head>
+<body>
+<div id="warning">
+  <h2>Does this site look plain?</h2>
+  <p>This site uses advanced css techniques</p>
+</div>
+<div id="logo">
+ <a href="http://unixwiz.net/">
+  <img src="Understanding%20UNIX%20termios%20VMIN%20and%20VTIME_files/unixwiz-logo-140x80.gif" alt="[Steve Friedl Logo]">
+ </a>
+</div>
+<div id="pageheader">
+<h1> Steve Friedl's Unixwiz.net Tech Tips </h1>
+<h2> Understanding UNIX termios VMIN and VTIME </h2>
+</div>
+<div id="navmenu">
+  <ul>
+<li><a href="http://unixwiz.net/"> Home </a> </li>
+<li><a href="http://unixwiz.net/contact"> Contact </a> </li>
+<li><a href="http://unixwiz.net/about/"> About </a> </li>
+<li><a href="http://unixwiz.net/techtips/"> TechTips </a> </li>
+<li><a href="http://unixwiz.net/tools/"> Tools&amp;Source </a> </li>
+<li><a href="http://unixwiz.net/evo/"> Evo Payroll </a> </li>
+<li><a href="http://unixwiz.net/cmdletters/"> CmdLetters </a> </li>
+<li><a href="http://unixwiz.net/research/"> Research </a> </li>
+<li><a href="http://unixwiz.net/3b2.html"> AT&amp;T 3B2 </a> </li>
+<li><a href="http://unixwiz.net/advisories.html"> Advisories </a> </li>
+<li><a href="http://unixwiz.net/news.html"> News/Pubs </a> </li>
+<li><a href="http://unixwiz.net/literacy.html"> Literacy </a> </li>
+<li><a href="http://unixwiz.net/voting/"> Calif.Voting </a> </li>
+<li><a href="http://unixwiz.net/personal/"> Personal </a> </li>
+<li><a href="http://blog.unixwiz.net/"> Tech Blog </a> </li>
+<li><a href="http://evoblog.unixwiz.net/"> Evo Blog </a> </li>
+</ul>
+</div>
+<div id="pagecontent">
+
+<p>
+The POSIX "termios" structures are at the center of serial-port I/O
+control, and there are <i>many</i> knobs and switches to turn here. The
+<b>stty</b> program is actually a command-line wrapper around the <b>termios</b>
+struct, and it should be apparent that this whole arena is filled with
+arcana, obscura, historical artifacts, and even nostalgia.
+</p>
+
+<p>
+A single Tech Tip can't possible cover them all, but it can at least
+touch on one area of common confusion: the use of <b>VMIN</b> and <b>VTIME</b>.
+These are macros used as indexes into the <b>termios.c_cc[]</b>
+array, which under normal circumstances holds the list of special
+<i>control characters</i> (backspace, erase, line kill, interrupt, etc.)
+for the current session.
+</p>
+
+<p>
+But when the <b>ICANON</b> bit is turned off, a "raw mode" is selected which
+changes the interpretation of these values. These are used to guide the
+line-driver code in its decision on allowing the <b>read()</b> system call to
+return.  We'll try to explain them in some detail.
+</p>
+
+<p class="topnote">
+NOTE: This is <b>not</b> a tutorial on <b>termios</b> programming as a
+whole. This is a very large subject, and the only way to present a Tech
+Tip on a subject is to presume that the reader understands the subject
+in general.
+</p>
+
+<p>
+An excellent resource is the dated but still timely book
+<a href="http://www.oreilly.com/catalog/posix/index.html">POSIX
+Programmer's Guide</a> by Donald Lewine (O'Reilly &amp; Associates). This
+covers terminal I/O quite well, along with other important POSIX topics (process
+control, signals, etc.). Highly recommended.
+</p>
+
+<h1>Who cares about timing?</h1>
+
+<p>
+Unlike reading from a file, where data are either "present" or
+"not present", there are also <i>timing issues</i> involved in reading from
+a tty channel.  Many programs won't care about this at all, but there
+are some important cases where this is vital to correct operation.
+</p>
+
+<dl class="defnlist">
+<dt>Function-key processing
+</dt>
+
+<dd>On a regular keyboard, most keys send just one byte each, but
+almost all keyboards have special keys that send a <i>sequence of characters</i>
+at a time. Examples (from an ANSI keyboard)
+</dd>
+
+<dd>
+<ul>
+<li><b><tt>ESC [ A</tt></b>    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up arrow </li>
+<li><b><tt>ESC [ 5 ~</tt></b>  &nbsp;&nbsp;&nbsp; page up </li>
+<li><b><tt>ESC [ 18 ~</tt></b> &nbsp;&nbsp; F7 </li>
+</ul>
+</dd>
+<dd>
+and so on.
+</dd>
+
+<dd>
+From a strictly "string recognition" point of view, it's easy
+enough to translate "<b>ESC [ A</b>" into "up arrow" inside a program,
+but how does it tell the difference between "user typed up-arrow"
+and "user typed the ESCAPE key"? The difference is <i>timing</i>.
+If the ESCAPE is <i>immediately</i> followed by the rest of the
+expected sequence, then it's a function key: otherwise it's just
+a plain ESCAPE.
+</dd>
+
+<dt>
+Efficient highspeed input
+</dt>
+
+<dd>When a communications program (such as fax software) is reading
+from a modem, the data stream is arriving at a relatively high rate.
+Doing single-character-at-a-time input would be extremely inefficient,
+given that each <b>read()</b> involves a system call and an operating
+system context switch.
+We'd instead like to read in larger chunk if it's available for us, but
+still know how to recognize timeouts (which usually indicate error
+conditions).
+</dd>
+
+<dt>
+Capturing occasional, low-volume data
+</dt>
+<dd>When writing software that monitored a temperature sensor via
+a serial line, we expected to receive a short (10-20 bytes)
+message every second. This message arrived as a single burst, and
+once the first character of the message was received, we <i>knew</i>
+that the others were right behind it and would be completely received
+in about 100 milliseconds.
+</dd>
+
+<dd>
+The message format did not have strong delimiters, so if we used
+a naïve read of so many bytes, we'd run the risk of reading
+an entire message but blocking until a few more bytes <i>of the next message</i>
+were read to fill our request. This could lead to getting "out of sync"
+with the sensor.
+</dd>
+
+<dd>
+By setting <b>VMIN</b>/<b>VTIME</b> properly, we were able to insure that
+that we could efficiently capture all the data sent in one burst without
+risk of inter-message overlap.
+</dd>
+</dl>
+
+<p>
+We'll note that some of these timeout issues can be partly addressed
+by the use of signals and alarms, but this is really a substandard
+solution: signals and I/O are hard to get right (especially in a
+portable manner), and we very strongly prefer using the features of
+the line-discipline code as they were intended. Signals suck.
+</p>
+
+<h1>When does <u>read()</u> return?</h1>
+
+<p>
+The <b>termios</b> settings are actually handled in the kernel, and
+the ones we're interested in are in the <i>line discipline</i> code.
+This sits above the "device driver", and this is consistent with our
+applying termios to both serial and network I/O (which obviously
+use different underlying hardware).
+</p>
+
+<p>
+All of the <b>VMIN</b> and <b>VTIME</b> areas involve one question:
+</p>
+
+<blockquote>
+<i>When does the line driver allow <b>read()</b> to return?</i>
+</blockquote>
+
+<p>
+With a "regular file", the operating system returns from the
+<b>read()</b> system call when either the user buffer is full, or
+when the end of file has been reached - this decision is easy
+and automatic.
+</p>
+
+<p>
+But when the driver is reading from a terminal line, the "Are we done?"
+question can be asked over and over for each character that arrives.
+This question is resolved by setting <b>VMIN</b>/<b>VTIME</b>.
+</p>
+
+<p>
+Using our temperature-sensor example, we'll list the requirements
+that inform our design:
+</p>
+
+<ul>
+<li>
+  We normally read up to 20 bytes as a "message"
+</li>
+<li>
+  Individual messages have their bytes all sent together
+</li>
+<li>
+  No background processing required; while waiting for input,
+  we're happy to block indefinitely waiting for something to happen
+</li>
+</ul>
+
+<p>
+The last requirement means that we have no <i>overall</i> timeout, but
+we do have an <i>intercharacter</i> timeout. This is the key functionality
+provided by the line driver. Let's be specific.
+</p>
+
+<p>
+When waiting for input, the driver returns when:
+</p>
+
+<dl class="defnlist">
+<dt> <b>VTIME</b> tenths of a second elapses <i>between</i> bytes</dt>
+<dd>
+An internal timer is started when a character arrives, and it counts
+up in tenths of a second units. It's reset whenever new data arrives, so
+rapidly-arriving data never gives the intercharacter timer a chance to
+count very high.
+</dd>
+
+<dd>
+It's only after the <i>last</i> character of a burst — when the line is
+quiet — that the timer really gets counting. When it reaches <b>VTIME</b>
+tenths, the user's request has been satisfied and the <b>read()</b> returns.
+</dd>
+
+<dd>
+This provides exactly the behavior we want when dealing with bursty data:
+collect data while it's arriving rapidly, but when it calms down,
+give us what you got.
+</dd>
+
+<dt><b>VMIN</b> characters have been received, with no more data available</dt>
+<dd>
+At first this appears duplicative to the <b>nbytes</b> parameter to the
+<b>read()</b> system call, but it's not quite the same thing.
+</dd>
+
+<dd>
+The serial driver maintains an input queue of data received but not
+transferred to the user — clearly data can arrive even when we're not
+asking for it — and this is always first copied to the user's buffer
+on a <b>read()</b> without having to wait for anything.
+</dd>
+
+<dd>
+But if we do end up blocking for I/O (because the kernel's input
+queue is empty), then <b>VMIN</b> kicks in: When that many bytes
+have been received, the <b>read()</b> request returns that data. In
+this respect we can think of the <b>nbytes</b> parameter as being the amount of
+data we <i>hope</i> to get, but we'll settle for <b>VMIN</b>.
+</dd>
+
+<dt>The user's requested number of bytes has been satisfied</dt>
+<dd>
+This rule trumps all the others: there is no circumstance where the
+system will provide <i>more</i> data than was actually asked for by the
+user. If the user asks for (say) ten bytes in the <b>read()</b>
+system call, and that much data is already waiting in the kernel's
+input queue, then it's returned to the caller immediately and without
+having <b>VMIN</b> and <b>VTIME</b> participate in any way.
+</dd>
+
+</dl>
+
+<p>
+These are certainly confusing to one who is new to <b>termios</b>, but
+it's not really poorly defined Instead, they solve problems that are
+not obvious to the newcomer. It's only when one is actually dealing
+with terminal I/O and running into issues of either performance or
+timing that one really must dig in.
+</p>
+
+<h1>VMIN and VTIME defined</h1>
+
+<p>
+<b>VMIN</b> is a character count ranging from 0 to 255 characters, and
+<b>VTIME</b> is time measured in 0.1 second intervals, (0 to 25.5 seconds).
+The value of "zero" is special to both of these parameters, and this suggests
+four combinations that we'll discuss below. In every case, the question
+is when a <b>read()</b> system call is satisfied, and this is our prototype call:
+</p>
+
+<pre class="codeblock">int n = read(fd, buffer, nbytes);
+</pre>
+
+<p>
+Keep in mind that the tty driver maintains an input queue of bytes
+already read from the serial line and not passed to the user, so not
+every <b>read()</b> call waits for actual I/O - the read may very well be
+satisfied directly from the input queue.
+</p>
+
+<dl class="defnlist">
+<dt>VMIN = 0 and VTIME = 0</dt>
+<dd>
+This is a completely non-blocking read - the call is satisfied immediately
+directly from the driver's input queue. If data are available, it's
+transferred to the caller's buffer up to nbytes and returned. Otherwise
+zero is immediately returned to indicate "no data".  We'll note that this
+is "polling" of the serial port, and it's almost always a bad idea. If
+done repeatedly, it can consume enormous amounts of processor time and
+is highly inefficient. Don't use this mode unless you really, really
+know what you're doing.
+</dd>
+
+<dt> VMIN = 0 and VTIME &gt; 0 </dt>
+<dd>
+This is a pure timed read. If data are available in the input queue,
+it's transferred to the caller's buffer up to a maximum of nbytes, and
+returned immediately to the caller. Otherwise the driver blocks until data
+arrives, or when VTIME tenths expire from the start of the call. If the
+timer expires without data, zero is returned. A single byte is sufficient
+to satisfy this read call, but if more is available in the input queue,
+it's returned to the caller. Note that this is an <i>overall</i> timer,
+not an <i>intercharacter</i> one.
+</dd>
+
+<dt>VMIN &gt; 0 and VTIME &gt; 0</dt>
+<dd>
+A <b>read()</b> is satisfied when either VMIN characters have been transferred to
+the caller's buffer, or when VTIME tenths expire between characters. Since
+this timer is not started until the first character arrives, this call
+can block indefinitely if the serial line is idle. This is the most
+common mode of operation, and we consider VTIME to be an <i>intercharacter</i>
+timeout, not an <i>overall</i> one. This call should never return zero bytes
+read.
+</dd>
+
+<dt> VMIN &gt; 0 and VTIME = 0 </dt>
+<dd>
+This is a counted read that is satisfied only when at least VMIN
+characters have been transferred to the caller's buffer - there is no
+timing component involved. This read can be satisfied from the driver's
+input queue (where the call could return immediately), or by waiting for
+new data to arrive: in this respect the call could block indefinitely. We
+believe that it's undefined behavior if nbytes is less then VMIN.
+</dd>
+</dl>
+
+<div id="navmore">
+  <a href="http://unixwiz.net/techtips/index.html"> More Tech Tips </a>
+</div>
+
+</div>
+<div id="pagefooter">
+  <span class="bottomright"> </span>
+  <div class="pagefootercontent">
+    <a href="http://unixwiz.net/"> Home </a>
+	<span class="divbrick"> &nbsp; </span> 
+    <a href="http://unixwiz.net/contact.html">Stephen J. Friedl</a>
+    <span class="divbrick"> &nbsp;</span>
+    Software Consultant
+    <span class="divbrick"> &nbsp;</span>
+    Orange County, CA USA
+    <span class="divbrick"> &nbsp;</span>
+    <img src="Understanding%20UNIX%20termios%20VMIN%20and%20VTIME_files/steve-email.gif" alt="[Steve's Email]">
+<span class="divbrick"> &nbsp; </span>
+  <a href="http://unixwiz.net/techtips/techtips.rss">
+    <img src="Understanding%20UNIX%20termios%20VMIN%20and%20VTIME_files/feed-icon-14x14.png" alt="[RSS Feed available]" width="14" height="14" border="0">
+  </a>
+  </div>
+</div>
+
+</body></html>
