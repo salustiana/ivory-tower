@@ -16,18 +16,6 @@ const char *frag_src = "#version 330 core\n"
 	"	frag_color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
 	"}\0";
 
-void process_input(GLFWwindow *window)
-{
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, 1);
-	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-}
-
 int main()
 {
 	GLFWwindow *window = create_window(SCR_WIDTH, SCR_HEIGHT);
@@ -43,26 +31,24 @@ int main()
 	struct GLColor glc = hex_to_glcolor(0x003566);
 
 	float vertices[] = {
-		-0.5,	-0.5,	0,
-		-0.5,	 0.5,	0,
-		 0.5,	 0.5,	0,
-		 0.5,	-0.5,	0
+		-0.5,	-0.5,	0,	// botleft
+		-0.5,	 0.5,	0,	// topleft
+		 0.5,	 0.5,	0,	// topright
 	};
-	unsigned int indeces[] = {
-		0, 1, 2,
-		0, 2, 3
+	float vertices2[] = {
+		 0.5,	 0.5,	0,	// topright
+		 0.5,	-0.5,	0,	// botright
+		-0.5,	-0.5,	0	// botleft
 	};
-	unsigned int vao = create_index_vao(sizeof(vertices), vertices,
-			sizeof(indeces), indeces);
+	unsigned int vao = create_vao(sizeof(vertices), vertices);
+	unsigned int vao2 = create_vao(sizeof(vertices2), vertices2);
 
 	unsigned int sp = create_program(vtx_src, frag_src);
-	glUseProgram(sp);
 
 	// main loop
 	while(!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();    
-		process_input(window);
 
 		glClearColor(glc.R, glc.G, glc.B, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -70,7 +56,9 @@ int main()
 		// draw triangle
 		glUseProgram(sp);
 		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(vao2);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glfwSwapBuffers(window);
 	}
