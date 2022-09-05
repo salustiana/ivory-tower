@@ -5,29 +5,36 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
+const char *v_shader_source = "#version 330 core\n"
+	"layout (location = 0) in vec3 aPos;\n"
+	"void main()\n"
+	"{\n"
+	"	gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+	"}\0";
+const char *f_shader_source = "#version 330 core\n"
+	"out vec4 frag_color;\n"
+	"void main()\n"
+	"{\n"
+	"	frag_color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+	"}\0";
+
+void process_input(GLFWwindow *);
+void framebuffer_size_callback(GLFWwindow *, int, int);
 struct GLColor {
 	GLfloat R;
 	GLfloat G;
 	GLfloat B;
 };
-
-struct GLColor hex_to_glcolor(unsigned long hex)
-{
-	struct GLColor glc;
-	glc.R = ((hex & 0xFF0000) >> 16) / 255.0f;
-	glc.G = ((hex & 0x00FF00) >>  8) / 255.0f;
-	glc.B =  (hex & 0x0000FF) 	 / 255.0f;
-
-	return glc;
-}
+struct GLColor hex_to_glcolor(unsigned long );
 
 int main()
 {
-	void process_input(GLFWwindow *);
-	void framebuffer_size_callback(GLFWwindow *, int, int);
 	GLFWwindow *create_window(int, int);
 
-	GLFWwindow *window = create_window(800, 600);
+	GLFWwindow *window = create_window(SCR_WIDTH, SCR_HEIGHT);
 
 	// acquire OS specific functions
 	if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
@@ -60,12 +67,6 @@ int main()
 
 
 	// create vertex shader
-	const char *v_shader_source = "#version 330 core\n"
-		"layout (location = 0) in vec3 aPos;\n"
-		"void main()\n"
-		"{\n"
-		"	gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-		"}\0";
 	unsigned int vs;
 	vs = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vs, 1, &v_shader_source, NULL);
@@ -82,12 +83,6 @@ int main()
 	}
 
 	// create fragment shader
-	const char *f_shader_source = "#version 330 core\n"
-		"out vec4 frag_color;\n"
-		"void main()\n"
-		"{\n"
-		"	frag_color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-		"}\0";
 	unsigned int fs;
 	fs = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fs, 1, &f_shader_source, NULL);
@@ -129,7 +124,12 @@ int main()
 
 		glClearColor(glc.R, glc.G, glc.B, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		// draw triangle
+		glUseProgram(sp);
+		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
+
 		glfwSwapBuffers(window);
 	}
 
@@ -143,7 +143,9 @@ GLFWwindow *create_window(int width, int height)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#endif
 
 	GLFWwindow *window = glfwCreateWindow(width, height,
 			"Bare", NULL, NULL);
@@ -173,4 +175,14 @@ void process_input(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, 1);
+}
+
+struct GLColor hex_to_glcolor(unsigned long hex)
+{
+	struct GLColor glc;
+	glc.R = ((hex & 0xFF0000) >> 16) / 255.0f;
+	glc.G = ((hex & 0x00FF00) >>  8) / 255.0f;
+	glc.B =  (hex & 0x0000FF) 	 / 255.0f;
+
+	return glc;
 }
