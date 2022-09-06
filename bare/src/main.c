@@ -4,10 +4,10 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 const char *vtx_src = "#version 330 core\n"
-	"layout (location = 0) in vec3 aPos;\n"
+	"layout (location = 0) in vec3 a_pos;\n"
 	"void main()\n"
 	"{\n"
-	"	gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+	"	gl_Position = vec4(a_pos.x, a_pos.y, a_pos.z, 1.0);\n"
 	"}\0";
 const char *frag_src = "#version 330 core\n"
 	"out vec4 frag_color;\n"
