@@ -1,5 +1,5 @@
-#include "./utils.h"
-#include "./shaders.h"
+#include "utils.h"
+#include "shaders.h"
 
 #include <math.h>
 
