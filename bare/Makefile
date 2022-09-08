@@ -1,11 +1,11 @@
 CC = gcc
-OBJS = main.o glad.o shaders.o utils.o
+OBJS = main.o glad.o shader.o utils.o
 CFLAGS = -Wall -Wextra -std=c99
 INCLUDES = -I ./includes
 LIBS = -lGL -lglfw -ldl -lm -lmi
 
-prog: ${OBJS}
-	${CC} -o prog ${OBJS} ${INCLUDES} ${CFLAGS} ${LIBS}
+a.out: ${OBJS} ./shaders
+	${CC} ${OBJS} ${INCLUDES} ${CFLAGS} ${LIBS}
 
 main.o: main.c
 	${CC} -c main.c ${INCLUDES}
@@ -13,8 +13,8 @@ main.o: main.c
 glad.o: glad.c
 	${CC} -c glad.c ${INCLUDES}
 
-shaders.o: shaders.c
-	${CC} -c shaders.c ${INCLUDES}
+shader.o: shader.c
+	${CC} -c shader.c ${INCLUDES}
 
 utils.o: utils.c
 	${CC} -c utils.c ${INCLUDES}
