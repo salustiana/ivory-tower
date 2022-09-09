@@ -5,8 +5,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define SCR_WIDTH 1024
-#define SCR_HEIGHT 768
+#define SCR_WIDTH	1024
+#define SCR_HEIGHT	768
 
 void process_input(GLFWwindow *window)
 {
@@ -25,16 +25,33 @@ int main()
 	int lateral_disp_uni = glGetUniformLocation(sp, "lateral_disp");
 	int color_uni = glGetUniformLocation(sp, "color");
 
+	stbi_set_flip_vertically_on_load(1);
 	int t_width, t_height, t_nr_channels;
 	unsigned char *t_data = stbi_load("./textures/container.jpg", &t_width, &t_height, &t_nr_channels, 0);
 	if (t_data == NULL)
 		perror("error loading texture");
 	unsigned int texture;
 	glGenTextures(1, &texture);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t_width, t_height, 0, GL_RGB, GL_UNSIGNED_BYTE, t_data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	stbi_image_free(t_data);
+	glUseProgram(sp);
+	glUniform1i(glGetUniformLocation(sp, "texture_uni"), 0);
+
+	t_data = stbi_load("./textures/awesomeface.png", &t_width, &t_height, &t_nr_channels, 0);
+	if (t_data == NULL)
+		perror("error loading texture");
+	unsigned int texture2;
+	glGenTextures(1, &texture2);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t_width, t_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, t_data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	stbi_image_free(t_data);
+	glUseProgram(sp);
+	glUniform1i(glGetUniformLocation(sp, "texture_uni2"), 1);
 
 	unsigned int vao;
 	glGenVertexArrays(1, &vao);
@@ -86,7 +103,10 @@ int main()
 		glUniform4f(color_uni, 0.0f, green, 0.0f, 1.0f);
 
 		glBindVertexArray(vao);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
 
 		glfwSwapBuffers(window);
