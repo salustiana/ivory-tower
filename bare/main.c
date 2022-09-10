@@ -2,11 +2,12 @@
 
 #include "utils.h"
 #include "shader.h"
+#include "cglm/cglm.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define SCR_WIDTH	1024
-#define SCR_HEIGHT	768
+#define SCR_WIDTH	600
+#define SCR_HEIGHT	600
 
 void process_input(GLFWwindow *window)
 {
@@ -22,7 +23,6 @@ int main()
 
 	unsigned int sp = build_shader("./shaders/move.vs", "./shaders/move.fs");
 
-	int lateral_disp_uni = glGetUniformLocation(sp, "lateral_disp");
 	int color_uni = glGetUniformLocation(sp, "color");
 
 	stbi_set_flip_vertically_on_load(1);
@@ -59,10 +59,10 @@ int main()
 
 	float vertices[] = {
 		// positions          // colors           // texture coords
-		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f,   // top left 
-		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+		-0.3f, -0.3f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+		-0.3f,  0.3f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f,   // top left
+		 0.3f,  0.3f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+		 0.3f, -0.3f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
 	};
 
 	unsigned int vbo;
@@ -87,6 +87,9 @@ int main()
 
 	glBindVertexArray(0);
 
+	int transform_uni = glGetUniformLocation(sp, "transform");
+	vec4 *transform = aligned_alloc(16, 16 * sizeof(float));
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		process_input(window);
@@ -95,11 +98,9 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		float time = glfwGetTime();
-		float lateral_disp = (sin(time * 2.0f) / 4.0f);
 		float green = (sin(time * 2.0f) / 4.0f + 0.5f);
 
 		glUseProgram(sp);
-		glUniform1f(lateral_disp_uni, lateral_disp);
 		glUniform4f(color_uni, 0.0f, green, 0.0f, 1.0f);
 
 		glBindVertexArray(vao);
@@ -107,6 +108,19 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		// first rect
+		glm_mat4_identity(transform);
+		glm_translate(transform, (float []) {0.5, 0, 0});
+		glm_rotate(transform, glfwGetTime(), (float []) {0, 0, 1});
+		glUniformMatrix4fv(transform_uni, 1, GL_FALSE, (float *) transform);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+
+		// second rect
+		glm_mat4_identity(transform);
+		glm_translate(transform, (float []) {-0.3, 0.3, 0});
+		glm_scale(transform, (float []) {sin(glfwGetTime()), 1, 0});
+		glUniformMatrix4fv(transform_uni, 1, GL_FALSE, (float *) transform);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
 
 		glfwSwapBuffers(window);
