@@ -1,5 +1,5 @@
 CC = gcc
-OBJS = main.o glad.o shader.o utils.o
+OBJS = main.o glad.o shader.o camera.o utils.o
 CFLAGS = -Wall -Wextra -std=c99
 INCLUDES = -I ./includes
 LIBS = -lGL -lglfw -ldl -lm -lmi
@@ -15,6 +15,9 @@ glad.o: glad.c
 
 shader.o: shader.c
 	${CC} -c shader.c ${INCLUDES}
+
+camera.o: camera.c
+	${CC} -c camera.c ${INCLUDES}
 
 utils.o: utils.c
 	${CC} -c utils.c ${INCLUDES}
