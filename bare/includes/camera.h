@@ -18,3 +18,5 @@ void translate_cam(struct camera *cam, float dir[3], float dist);
 void rotate_cam(struct camera *cam, float center[3], float axis[3], float rads);
 
 void spin_cam(struct camera *cam, float axis[3], float rads);
+
+void set_cam_dir(struct camera *cam, float dir[3]);

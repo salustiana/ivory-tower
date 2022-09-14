@@ -51,3 +51,11 @@ void spin_cam(struct camera *cam, float axis[3], float rads)
 	glm_vec3_rotate(cam->up, rads, axis);
 	update_cam(cam);
 }
+
+void set_cam_dir(struct camera *cam, float dir[3])
+{
+	cam->dir[0] = dir[0];
+	cam->dir[1] = dir[1];
+	cam->dir[2] = dir[2];
+	update_cam(cam);
+}
