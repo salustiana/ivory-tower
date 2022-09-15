@@ -1,0 +1,2 @@
+- add cam setup by angles in camera.c (pitch, yaw, tilt)
+- print_mat to utils.c
