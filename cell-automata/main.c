@@ -38,8 +38,6 @@ int main()
 	xgap = xsiz/10;
 	ygap = ysiz/10;
 
-	printf("%d, %d\n", ncx, ncy);
-
 	// generate random cells
 	srand(time(NULL));
 	for (int x = 0; x < ncx-1; x++)
@@ -91,19 +89,18 @@ int main()
 		glfwPollEvents();
 		process_input(window);
 
-		glClearColor(glc.R, glc.G, glc.B, 1.0f);
-		glClearColor(0.3, 0.3, 0.3, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		timer -= delta;
 		if (timer <= 0) {
 			timer = calc_time;
 			calculate_cells();
+
+			glClearColor(glc.R, glc.G, glc.B, 1.0f);
+			glClearColor(0.3, 0.3, 0.3, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			draw_cells();
+			glfwSwapBuffers(window);
+
 		}
-
-		draw_cells();
-
-		glfwSwapBuffers(window);
 
 		delta = glfwGetTime() - frame_start;
 	}
