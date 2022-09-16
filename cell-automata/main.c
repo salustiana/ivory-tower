@@ -82,7 +82,7 @@ int main()
 	glBindVertexArray(0);
 
 	float calc_time = 0.5;
-	float timer = calc_time;
+	float timer = 0;
 	while (!glfwWindowShouldClose(window)) {
 		double frame_start = glfwGetTime();
 
