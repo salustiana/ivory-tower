@@ -14,10 +14,12 @@
 	.type fact, @function
 
 _start:
-	pushl $4
+	pushl $5
 	call fact_rec
-
 	movl %eax, %ebx
+	jmp exit
+
+exit:
 	movl $1, %eax
 	int $0x80
 
@@ -26,8 +28,8 @@ fact:
 	movl %esp, %ebp		# create our stack frame
 
 	cmpl $1, 8(%ebp)	# return 0 if n <= 1
-	movl $0, %eax
-	je fact_end
+	movl $1, %eax
+	jle fact_end
 
 	movl 8(%ebp), %eax	# store n in %eax
 	movl %eax, %ebx		# and copy it to %ebx
@@ -46,7 +48,6 @@ fact_end:
 
 	ret			# %eax already holds retval
 
-
 # recursive version
 	.type fact_rec, @function
 fact_rec:
@@ -55,7 +56,7 @@ fact_rec:
 
 	cmpl $1, 8(%ebp)	# return 1 if n <= 1
 	movl $1, %eax
-	je fact_rec_end
+	jle fact_rec_end
 
 	movl 8(%ebp), %ebx	# call fact_rec with n-1
 	decl %ebx
@@ -64,10 +65,9 @@ fact_rec:
 	addl $4, %esp		# reset stack
 
 	movl 8(%ebp), %ebx
-	imull %eax, %ebx	# multiply n by fact(n-1)
+	imull %ebx, %eax	# multiply fact(n-1) by n
 
-	movl %ebx, %eax		# return result
-	jmp fact_rec_end
+	jmp fact_rec_end	# return result
 
 fact_rec_end:
 	movl %ebp, %esp		# restore stack and

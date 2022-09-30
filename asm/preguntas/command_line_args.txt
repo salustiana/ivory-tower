@@ -1,0 +1,1 @@
+como sabe linux a que distancia stackear los command line arguments cuando llama a un ejecutable, si es de 32 o 64 bits
