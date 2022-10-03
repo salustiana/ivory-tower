@@ -7,21 +7,10 @@
 #
 
 	.section .text
-	.globl _start
 	.globl fact
 	.globl fact_rec
 
 	.type fact, @function
-
-_start:
-	pushl $5
-	call fact_rec
-	movl %eax, %ebx
-	jmp exit
-
-exit:
-	movl $1, %eax
-	int $0x80
 
 fact:
 	pushl %ebp		# save caller's base pointer

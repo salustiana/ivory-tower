@@ -3,50 +3,10 @@
 #	fills out string with ascii
 #	representation of n
 
-	.section .data
-parola:
-	.string "hola"
-	.equ STRLEN, 4
-
-	.section .bss
-	.equ MAX_DIGITS, 1024
-	.lcomm itoa_ret, MAX_DIGITS
-
 	.section .text
-	.globl _start
 	.globl itoa
 
 	.type itoa, @function
-
-_start:
-	#pushl $STRLEN
-	#pushl $parola
-	#call reverse
-
-	# write syscall
-	#movl $4, %eax
-	#movl $1, %ebx
-	#movl $parola, %ecx
-	#movl $STRLEN, %edx
-	#int $0x80
-
-	pushl $-132
-	pushl $parola
-	call itoa
-
-	# write syscall
-	movl $4, %eax
-	movl $1, %ebx
-	movl $parola, %ecx
-	movl $4, %edx
-	int $0x80
-
-	jmp exit
-
-exit:
-	movl $1, %eax
-	int $0x80
-
 
 itoa:	# void itoa(char *out, int n);
 # registers:
