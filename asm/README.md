@@ -38,6 +38,12 @@ $ ld -m elf_i386 \
 	-L ~/glibc32-2.6/lib prog.o -o prog -lc
 ```
 
+- to get info from `ldd`, edit `/usr/bin/ldd`, which is just a bash
+script and add the new linker to the `RTLDLIST` variable:
+```
+RTDLIST="/usr/lib/ld-linux.so.2 /usr/lib64/ld-linux-x86-64.so.2 /usr/libx32/ld-linux-x32.so.2 $HOME/glibc32-2.6/lib/ld-linux.so.2"
+```
+
 ## using gcc
 
 - use `void _start()` as the entry point:
@@ -54,7 +60,7 @@ void _start()
 $ gcc -m32 -march=i386 -static -nostdlib prog.c -o prog
 ```
 
-- or produce assembly source (this will produce prog.s):
+- or produce assembly source: (this will produce prog.s)
 ```
 $ gcc -m32 -march=i386 -static -nostdlib prog.c -S
 ```
