@@ -1,4 +1,5 @@
 #include <math.h>
+#include <malloc.h>
 
 #include "utils.h"
 #include "shader.h"
@@ -220,9 +221,9 @@ int main()
 
 	glBindVertexArray(0);
 
-	model = aligned_alloc(16, 16 * sizeof(float));
-	view = aligned_alloc(16, 16 * sizeof(float));
-	projection = aligned_alloc(16, 16 * sizeof(float));
+	model = memalign(16, 16 * sizeof(float));
+	view = memalign(16, 16 * sizeof(float));
+	projection = memalign(16, 16 * sizeof(float));
 
 	model_u = glGetUniformLocation(sp, "model");
 	view_u = glGetUniformLocation(sp, "view");

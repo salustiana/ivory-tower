@@ -1,0 +1,2 @@
+- install glfw
+- generate and download the loader: https://glad.dav1d.de/
