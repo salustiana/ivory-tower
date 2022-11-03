@@ -2,14 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define nelem(a) (sizeof(a) / sizeof(a[0]))
-
-int pow2(int exp)
-{
-	unsigned int res = 1;
-	res <<= exp;
-	return res;
-}
+#define NELEM(A)	(sizeof(A) / sizeof(A[0]))
+#define POW2(X)		(1 << (X))
 
 struct node {
 	char *s;
@@ -80,8 +74,8 @@ void repr_tree(char *lines[], struct node *n, int d, int depth, int slen)
 	while (lines[l][c] == ' ' && c > 0)
 		c--;
 	if (c == 0)
-		c -= (pow2(depth - d)*(slen+1) - (slen-1))/2 - 1;
-	c += pow2(depth-d)*(slen+1) - (slen-1);
+		c -= (POW2(depth - d)*(slen+1) - (slen-1))/2 - 1;
+	c += POW2(depth-d)*(slen+1) - (slen-1);
 	int i = 0;
 	if (n)
 		while (i < slen && n->s[i]) {
@@ -98,7 +92,7 @@ void repr_tree(char *lines[], struct node *n, int d, int depth, int slen)
 
 void print_tree(struct node *n, int depth, int slen)
 {
-	int line_memb = slen*pow2(depth) + 1;
+	int line_memb = slen*POW2(depth) + 1;
 	char *lines[depth];
 	for (int l=0; l<depth; l++) {
 		lines[l] = calloc(line_memb, sizeof(char));
@@ -121,7 +115,7 @@ int main()
 	int slen = 5;
 	struct node *n = makenode("jarro", NULL, NULL);
 	char *insrt[] = {"foca", "roca", "antes", "mora", "cosa", "xilo", "rico"};
-	for (int i=0; i < nelem(insrt); i++)
+	for (int i=0; i < NELEM(insrt); i++)
 		insert(n, insrt[i]);
 	print_tree(n, depth, slen);
 }
