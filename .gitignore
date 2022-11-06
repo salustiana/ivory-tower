@@ -1,1 +1,20 @@
-a.out
+# ignore all
+*
+
+# unignore all with extensions
+!*.*
+
+# unignore all dirs
+!*/
+
+# unignore makefile
+!Makefile
+
+*.o
+*.out
+
+.cache/
+compile_commands.json
+.venv*
+sine.png
+
