@@ -1,3 +1,5 @@
+#include "bytes.h"
+
 #include <stdio.h>
 
 void print_bytes(void *obj, size_t size)
