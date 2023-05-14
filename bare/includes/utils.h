@@ -12,4 +12,4 @@ struct gl_color {
 };
 struct gl_color hex_to_gl_color(unsigned long);
 unsigned int triangle_2d_vao(float x1, float y1, float x2, float y2, float x3, float y3);
-unsigned int rect_2d_vao(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
+unsigned int quad_2d_vao(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);

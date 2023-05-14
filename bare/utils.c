@@ -75,7 +75,7 @@ unsigned int triangle_2d_vao(float x1, float y1, float x2, float y2, float x3, f
 	return vao;
 }
 
-unsigned int rect_2d_vao(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
+unsigned int quad_2d_vao(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
 {
 	unsigned int vao;
 	glGenVertexArrays(1, &vao);
